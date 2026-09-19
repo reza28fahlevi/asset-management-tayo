@@ -1,0 +1,2029 @@
+<!DOCTYPE html>
+<html lang="id" class="">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>TAYO - Sistem Manajemen Aset & Operasional PO Bus AKAP</title>
+
+  <!-- Fonts & Material Symbols -->
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#0062e3",
+            "primary-hover": "#004bb2",
+            "primary-container": "#0062e3",
+            "on-primary": "#ffffff",
+            "on-primary-container": "#e5eaff",
+            "primary-fixed": "#d9e2ff",
+            "on-primary-fixed": "#001945",
+            "primary-fixed-dim": "#b0c6ff",
+            "secondary": "#486176",
+            "on-secondary": "#ffffff",
+            "secondary-container": "#cbe6ff",
+            "on-secondary-container": "#4e677c",
+            "secondary-fixed": "#cbe6ff",
+            "on-secondary-fixed": "#001e30",
+            "tertiary": "#5f496a",
+            "on-tertiary": "#ffffff",
+            "tertiary-container": "#786183",
+            "on-tertiary-container": "#f9e3ff",
+            "tertiary-fixed": "#f5d9ff",
+            "on-tertiary-fixed": "#261431",
+            "surface": "#faf8fd",
+            "on-surface": "#1b1b1f",
+            "surface-variant": "#e3e2e6",
+            "on-surface-variant": "#424654",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f5f3f7",
+            "surface-container": "#efedf2",
+            "surface-container-high": "#e9e7ec",
+            "surface-container-highest": "#e3e2e6",
+            "background": "#faf8fd",
+            "on-background": "#1b1b1f",
+            "outline": "#727786",
+            "outline-variant": "#c2c6d7",
+            "error": "#ba1a1a",
+            "on-error": "#ffffff",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a",
+            "inverse-surface": "#303034",
+            "inverse-on-surface": "#f2f0f4"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"]
+          },
+          spacing: {
+            "gutter": "1rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-xl": "2rem",
+            "space-xs": "0.25rem"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @layer base {
+      html, body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', sans-serif;
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+
+  <!-- React & Router Dependencies -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/history@5/umd/history.development.js"></script>
+  <script src="https://unpkg.com/react-router@6.3.0/umd/react-router.development.js"></script>
+  <script src="https://unpkg.com/react-router-dom@6.3.0/umd/react-router-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+</head>
+<body class="bg-background font-sans text-on-surface antialiased">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+    const { createRoot } = ReactDOM;
+    const { MemoryRouter, Routes, Route, Link, useNavigate, useLocation } = ReactRouterDOM;
+
+    // --- Navigation Links Configuration ---
+    const navItems = [
+      { section: "Utama", items: [
+        { path: "/", label: "Dashboard Overview", icon: "dashboard" }
+      ]},
+      { section: "Manajemen Aset", items: [
+        { path: "/master-armada", label: "Master Data Armada", icon: "directions_bus" },
+        { path: "/pelacakan-ban-komponen", label: "Tracking Ban & Aki", icon: "tire_repair" },
+        { path: "/master-pool-trayek", label: "Master Pool & Trayek", icon: "alt_route" }
+      ]},
+      { section: "Operasional Dispatch", items: [
+        { path: "/inspeksi-pre-trip", label: "Pre-Trip Inspection", icon: "fact_check" },
+        { path: "/dispatch-serah-terima", label: "Serah Terima & Odometer", icon: "sync_alt" },
+        { path: "/log-insiden", label: "Incident & Road Trouble", icon: "warning", badge: "3 Aktif" }
+      ]},
+      { section: "Workshop & Inventory", items: [
+        { path: "/perawatan-spk", label: "Work Order SPK & PM", icon: "build" },
+        { path: "/gudang-suku-cadang", label: "Gudang Suku Cadang", icon: "inventory_2", badge: "3 Kritis" }
+      ]},
+      { section: "Governance & Finansial", items: [
+        { path: "/legalitas-regulasi", label: "Legalitas KIR & KPS", icon: "verified", badge: "3 Kritis" },
+        { path: "/analitik-biaya-km", label: "Cost per KM & TCO", icon: "monitoring" }
+      ]}
+    ];
+
+    // --- Sidebar Component ---
+    function Sidebar() {
+      const location = useLocation();
+
+      return (
+        <aside className="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-r border-outline-variant/30">
+          {/* Logo Brand */}
+          <div className="h-16 px-space-md flex items-center gap-space-sm bg-surface-container-low flex-shrink-0 border-b border-surface-container">
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white shadow-sm font-bold text-xl">
+              <span className="material-symbols-outlined text-[26px]">directions_bus</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-lg font-bold tracking-tight text-primary leading-none">TAYO</span>
+              <span className="text-[11px] font-medium text-on-surface-variant">Sistem Aset & Operasional</span>
+            </div>
+          </div>
+
+          {/* Telematics Pulse */}
+          <div className="px-space-md py-space-sm">
+            <div className="bg-surface-container-lowest rounded-lg p-2.5 shadow-[0_1px_8px_rgba(0,0,0,0.04)] flex items-center justify-between border border-outline-variant/20">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-[12px] font-medium text-on-surface-variant">Telematics Sync</span>
+              </div>
+              <span className="text-[11px] font-bold text-primary px-1.5 py-0.5 rounded bg-blue-50">LIVE</span>
+            </div>
+          </div>
+
+          {/* Navigation Menu */}
+          <nav className="flex-1 px-space-sm py-space-xs space-y-3 overflow-y-auto">
+            {navItems.map((grp, idx) => (
+              <div key={idx}>
+                <div className="px-3 pt-2 pb-1">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-outline">{grp.section}</span>
+                </div>
+                <div className="space-y-1">
+                  {grp.items.map((item) => {
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-all ${
+                          isActive
+                            ? "bg-primary text-white font-semibold shadow-sm"
+                            : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className={`material-symbols-outlined text-[20px] ${isActive ? "text-white" : "text-secondary"}`}>
+                            {item.icon}
+                          </span>
+                          <span>{item.label}</span>
+                        </div>
+                        {item.badge && (
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                            isActive ? "bg-white/20 text-white" : "bg-error-container text-error"
+                          }`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
+
+          {/* Radio Status in Bottom Bar */}
+          <div className="p-space-sm bg-surface-container-low flex-shrink-0 border-t border-surface-container">
+            <div className="p-2.5 bg-surface-container-lowest rounded-xl flex items-center justify-between shadow-xs border border-outline-variant/20">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-[20px]">phone_in_talk</span>
+                <span className="text-xs text-on-surface-variant font-medium">Radio Tol Dispatch</span>
+              </div>
+              <span className="text-xs font-bold text-on-surface bg-slate-100 px-2 py-0.5 rounded">Ch. 04</span>
+            </div>
+          </div>
+        </aside>
+      );
+    }
+
+    // --- Header Component ---
+    function Header({ onToggleTheme }) {
+      const [pool, setPool] = useState("Pool Pusat Pulogebang");
+
+      return (
+        <header className="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl border-b border-outline-variant/20 shadow-[0_1px_8px_rgba(0,0,0,0.02)] z-40 flex items-center justify-between px-space-lg">
+          <div className="flex items-center gap-space-md flex-1 max-w-2xl">
+            <div className="relative flex items-center">
+              <select
+                value={pool}
+                onChange={(e) => setPool(e.target.value)}
+                className="appearance-none bg-surface-container-lowest text-on-surface text-xs font-semibold rounded-lg py-2 pl-3 pr-8 shadow-xs border border-outline-variant/30 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option>Pool Pusat Pulogebang</option>
+                <option>Pool Surabaya Waru</option>
+                <option>Pool Solo Tirtonadi</option>
+                <option>Pool Poris Tangerang</option>
+              </select>
+              <span className="material-symbols-outlined absolute right-2 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+            </div>
+            <div className="relative w-full max-w-md">
+              <span className="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-[18px]">search</span>
+              <input
+                className="w-full bg-surface-container-lowest text-on-surface text-xs rounded-lg pl-9 pr-14 py-2 border border-outline-variant/30 placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Cari VIN, No. Lambung, Part #, Plat..."
+                type="text"
+              />
+              <kbd className="absolute right-2 top-2 px-1.5 py-0.5 text-[10px] bg-surface-container-high text-on-surface-variant rounded font-mono font-semibold">Ctrl K</kbd>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-space-sm">
+            <Link to="/legalitas-regulasi" className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-all" title="Peringatan Regulasi">
+              <span className="material-symbols-outlined text-[22px]">notifications</span>
+              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-error text-white text-[9px] font-bold">3</span>
+            </Link>
+            <button onClick={onToggleTheme} className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container transition-all" title="Mode Tema" type="button">
+              <span className="material-symbols-outlined text-[22px]">light_mode</span>
+            </button>
+            <div className="h-6 w-px bg-outline-variant/50 mx-1"></div>
+            <div className="flex items-center gap-2.5 pl-1">
+              <div className="text-right hidden sm:block">
+                <div className="text-xs text-on-surface font-semibold leading-tight">Ratna Sari</div>
+                <div className="text-[11px] text-on-surface-variant leading-tight">Fleet Operations Manager</div>
+              </div>
+              <img
+                alt="Profile"
+                className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-outline-variant"
+                src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
+              />
+            </div>
+          </div>
+        </header>
+      );
+    }
+
+    // --- SCREEN 1: DASHBOARD OVERVIEW ---
+    function DashboardScreen() {
+      const navigate = useNavigate();
+
+      return (
+        <div className="flex flex-col w-full space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[11px] font-bold uppercase">Pusat Kendali Operasi AKAP</span>
+                <span className="text-outline text-xs">•</span>
+                <span className="text-on-surface-variant text-xs flex items-center gap-1.5 font-medium">
+                  <span className="inline-block w-2 h-2 rounded-full bg-primary animate-ping"></span>
+                  Pemutakhiran Real-Time Telematika 14:32 WIB
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold text-on-surface tracking-tight mt-1">Status Kesiapan Armada & Health Command</h1>
+              <p className="text-sm text-on-surface-variant">Monitoring 148 bus lintas Jawa-Sumatera, kesiapan ritase malam, dan kepatuhan kelaikan.</p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button onClick={() => navigate("/dispatch-serah-terima")} className="flex items-center gap-1.5 px-3 py-2 bg-surface-container text-on-surface text-xs font-semibold rounded-lg hover:bg-surface-container-high transition-all">
+                <span className="material-symbols-outlined text-[18px]">print</span>
+                Dispatch Manifest
+              </button>
+              <button onClick={() => navigate("/perawatan-spk")} className="flex items-center gap-1.5 px-3.5 py-2 bg-primary text-white text-xs font-semibold rounded-lg shadow-sm hover:bg-primary-hover transition-all">
+                <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                Surat Perintah Kerja (SPK) Baru
+              </button>
+            </div>
+          </div>
+
+          {/* Metric KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="lg:col-span-2 bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant/20 flex flex-col justify-between">
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="text-xs uppercase font-bold text-on-surface-variant tracking-wider">Total Armada Aktif</span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-4xl font-bold text-primary">148</span>
+                    <span className="text-xs text-on-surface-variant font-medium">Unit Bus AKAP</span>
+                  </div>
+                </div>
+                <div className="w-11 h-11 rounded-full bg-secondary-fixed flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined text-[24px]">directions_bus</span>
+                </div>
+              </div>
+              <div className="mt-4 pt-3 bg-surface-container-low -mx-5 -mb-5 p-3 px-5 rounded-b-xl flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary"></span>
+                  <span className="text-xs text-on-surface font-semibold">Tingkat Kesiapan Jalan</span>
+                </div>
+                <span className="text-sm font-bold text-primary">75.7%</span>
+              </div>
+            </div>
+
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs text-on-surface-variant font-medium">
+                <span>Siap Jalan (Ready)</span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold">Siap</span>
+              </div>
+              <div className="my-2">
+                <span className="text-2xl font-bold text-on-surface">112</span>
+                <span className="text-[11px] text-on-surface-variant block">Pool & Jalur Trayek</span>
+              </div>
+              <div className="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+                <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: "75.6%" }}></div>
+              </div>
+            </div>
+
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs text-on-surface-variant font-medium">
+                <span>Sedang On-Trip</span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 text-primary text-[10px] font-bold">Jalur</span>
+              </div>
+              <div className="my-2">
+                <span className="text-2xl font-bold text-primary">84</span>
+                <span className="text-[11px] text-on-surface-variant block">56.7% Sedang Dinas</span>
+              </div>
+              <div className="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+                <div className="bg-primary h-1.5 rounded-full" style={{ width: "56.7%" }}></div>
+              </div>
+            </div>
+
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs text-on-surface-variant font-medium">
+                <span>Standby Cadangan</span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[10px] font-bold">Standby</span>
+              </div>
+              <div className="my-2">
+                <span className="text-2xl font-bold text-on-surface">14</span>
+                <span className="text-[11px] text-on-surface-variant block">Unit Back-up Siaga Pool</span>
+              </div>
+              <div className="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
+                <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: "9.4%" }}></div>
+              </div>
+            </div>
+
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs text-on-surface-variant font-medium">
+                <span>Bengkel & SPK</span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-50 text-error text-[10px] font-bold">Perbaikan</span>
+              </div>
+              <div className="my-2 flex items-baseline justify-between">
+                <div>
+                  <span className="text-2xl font-bold text-error">18</span>
+                  <span className="text-[11px] text-on-surface-variant block">SPK Dalam Pengerjaan</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xs font-bold text-on-surface-variant">4</span>
+                  <span className="text-[10px] text-outline block">Afkir</span>
+                </div>
+              </div>
+              <div className="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden flex">
+                <div className="bg-error h-1.5" style={{ width: "12.1%" }}></div>
+                <div className="bg-outline h-1.5" style={{ width: "2.7%" }}></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mid Section: Active Ritase & SPK / Compliance */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left 8 Cols */}
+            <div className="lg:col-span-8 space-y-6">
+              <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 border-b border-surface-container gap-2">
+                  <div>
+                    <h2 className="text-base font-bold text-on-surface">Distribusi Ritase Real-Time Antar Pool & Terminal</h2>
+                    <p className="text-xs text-on-surface-variant">Pemetaan transit koridor Pantura, Tol Trans-Jawa, dan Lintas Sumatera.</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 bg-surface-container text-xs rounded text-on-surface-variant font-semibold">94 Rute</span>
+                    <span className="px-2 py-0.5 bg-secondary-fixed text-primary text-xs rounded font-bold">18 On-Schedule</span>
+                  </div>
+                </div>
+
+                {/* Hub Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                  <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/20">
+                    <div className="flex items-center justify-between text-xs text-on-surface-variant">
+                      <span>Pulogebang JKT</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    </div>
+                    <div className="flex justify-between items-baseline mt-1 text-xs">
+                      <span className="font-bold text-on-surface">26 Dept</span>
+                      <span className="text-primary font-bold">16 Arr</span>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/20">
+                    <div className="flex items-center justify-between text-xs text-on-surface-variant">
+                      <span>Poris Tangerang</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    </div>
+                    <div className="flex justify-between items-baseline mt-1 text-xs">
+                      <span className="font-bold text-on-surface">14 Dept</span>
+                      <span className="text-primary font-bold">9 Arr</span>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/20">
+                    <div className="flex items-center justify-between text-xs text-on-surface-variant">
+                      <span>Banyumanik SMG</span>
+                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                    </div>
+                    <div className="flex justify-between items-baseline mt-1 text-xs">
+                      <span className="font-bold text-on-surface">18 Dept</span>
+                      <span className="text-primary font-bold">22 Arr</span>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/20">
+                    <div className="flex items-center justify-between text-xs text-on-surface-variant">
+                      <span>Medaeng SBY</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    </div>
+                    <div className="flex justify-between items-baseline mt-1 text-xs">
+                      <span className="font-bold text-on-surface">22 Dept</span>
+                      <span className="text-primary font-bold">28 Arr</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-3 border-t border-surface-container text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-primary flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[18px]">route</span>
+                    </div>
+                    <div>
+                      <span className="text-on-surface-variant block text-[11px]">Total Ritase Hari Ini</span>
+                      <span className="font-bold text-on-surface">118 Ritase</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[18px]">speed</span>
+                    </div>
+                    <div>
+                      <span className="text-on-surface-variant block text-[11px]">On-Time Departure</span>
+                      <span className="font-bold text-emerald-700">96.4%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[18px]">local_gas_station</span>
+                    </div>
+                    <div>
+                      <span className="text-on-surface-variant block text-[11px]">Rerata Konsumsi Solar</span>
+                      <span className="font-bold text-on-surface">3.42 KM/L</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Work Order Table Widget */}
+              <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 p-5">
+                <div className="flex items-center justify-between pb-3 border-b border-surface-container">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-error text-[22px]">build</span>
+                    <div>
+                      <h2 className="text-base font-bold text-on-surface">Work Order (SPK) Bengkel Aktif</h2>
+                      <span className="text-xs text-on-surface-variant">18 bus dalam antrean perawatan di bengkel workshop</span>
+                    </div>
+                  </div>
+                  <button onClick={() => navigate("/perawatan-spk")} className="text-xs font-semibold text-primary hover:underline">
+                    Lihat Seluruh SPK →
+                  </button>
+                </div>
+
+                <div className="overflow-x-auto mt-3">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="bg-surface-container-low text-on-surface-variant uppercase font-semibold">
+                        <th className="py-2.5 px-3 rounded-l-lg">No SPK / Unit</th>
+                        <th className="py-2.5 px-3">Chassis</th>
+                        <th className="py-2.5 px-3">Kendala</th>
+                        <th className="py-2.5 px-3">Workshop</th>
+                        <th className="py-2.5 px-3 rounded-r-lg">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-container">
+                      <tr className="hover:bg-surface-container-low/50">
+                        <td className="py-3 px-3">
+                          <span className="font-bold text-primary block">TY-082</span>
+                          <span className="font-mono text-[11px] text-outline">SPK-2024-1108</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="font-medium text-on-surface block">Hino RM 280 ABS</span>
+                          <span className="text-[10px] text-on-surface-variant">Executive 2+2</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="font-semibold text-on-surface block">Bocoran Valve Air Brake</span>
+                          <span className="text-[10px] text-error">Prioritas Kritis</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span>Pool Pulogebang</span>
+                          <span className="text-[10px] text-outline block">Bay 03</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-error-container text-error text-[10px] font-bold">
+                            Menunggu Part
+                          </span>
+                        </td>
+                      </tr>
+                      <tr className="hover:bg-surface-container-low/50">
+                        <td className="py-3 px-3">
+                          <span className="font-bold text-primary block">TY-043</span>
+                          <span className="font-mono text-[11px] text-outline">SPK-2024-1104</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="font-medium text-on-surface block">MB OH 1626 L</span>
+                          <span className="text-[10px] text-on-surface-variant">Super Executive</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="font-semibold text-on-surface block">Penggantian Kopling</span>
+                          <span className="text-[10px] text-on-surface-variant">Servis 80K KM</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span>Pool Medaeng SBY</span>
+                          <span className="text-[10px] text-outline block">Pit Stop 01</span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-primary text-[10px] font-bold">
+                            In-Progress (70%)
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Right 4 Cols: Legalitas & PM Alert */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 p-5">
+                <div className="flex items-center justify-between pb-3 border-b border-surface-container">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-error text-[20px]">notification_important</span>
+                    <h2 className="text-sm font-bold text-on-surface">Compliance & Legalitas</h2>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-error text-white text-[10px] font-bold">4 Kritis</span>
+                </div>
+                <div className="space-y-3 mt-3">
+                  <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/10 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-on-surface">TY-021 (B 7741 TGA)</span>
+                      <span className="text-error font-bold">Sisa 3 Hari</span>
+                    </div>
+                    <p className="text-on-surface-variant mt-1">Uji Berkala KIR Dishub - Jatuh Tempo 28 Okt</p>
+                    <div className="mt-2 flex justify-end">
+                      <button onClick={() => navigate("/legalitas-regulasi")} className="px-2.5 py-1 bg-primary text-white rounded text-[11px] font-semibold">
+                        Booking Slot KIR
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/10 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-on-surface">TY-064 (B 7190 KGA)</span>
+                      <span className="text-error font-bold">Sisa 5 Hari</span>
+                    </div>
+                    <p className="text-on-surface-variant mt-1">KPS / SPIONAM Trayek Jkt-Malang</p>
+                    <div className="mt-2 flex justify-end">
+                      <button onClick={() => navigate("/legalitas-regulasi")} className="px-2.5 py-1 bg-primary text-white rounded text-[11px] font-semibold">
+                        Perpanjang KPS
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 p-5">
+                <div className="flex items-center justify-between pb-3 border-b border-surface-container">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-amber-600 text-[20px]">timelapse</span>
+                    <h2 className="text-sm font-bold text-on-surface">Ambang Servis PM Kritis</h2>
+                  </div>
+                  <span className="text-xs text-outline">&lt; 500 KM</span>
+                </div>
+                <div className="space-y-3 mt-3 text-xs">
+                  <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/10">
+                    <div className="flex justify-between font-semibold">
+                      <span className="text-primary">TY-015 (Scania K410)</span>
+                      <span className="text-error font-bold">Sisa 240 KM</span>
+                    </div>
+                    <div className="w-full bg-surface-container-highest rounded-full h-1.5 mt-2 overflow-hidden">
+                      <div className="bg-error h-1.5 rounded-full" style={{ width: "97.6%" }}></div>
+                    </div>
+                    <div className="flex justify-between items-center mt-2 text-[11px]">
+                      <span className="text-on-surface-variant">Paket 200.000 KM</span>
+                      <button onClick={() => navigate("/perawatan-spk")} className="text-primary font-bold hover:underline">
+                        Booking Bay Solo
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- SCREEN 2: MASTER DATA ARMADA ---
+    function MasterArmadaScreen() {
+      const [selectedBus, setSelectedBus] = useState("T-015");
+      const [searchQuery, setSearchQuery] = useState("");
+      const [showAddModal, setShowAddModal] = useState(false);
+
+      const buses = [
+        {
+          id: "T-015",
+          plate: "B 7123 VGA",
+          year: "2024",
+          color: "Putih Biru",
+          chassis: "Mercedes-Benz OH 1626 L",
+          vin: "WDB3820251A987612",
+          engine: "OM906LA.V/1-002148",
+          body: "Adiputro Jetbus 5 MHD",
+          type: "Sleeper Suite (22 Seat)",
+          layout: "1-1 Capsule Deck",
+          odo: "84.320 Km",
+          pool: "Pulogebang (Jkt)",
+          status: "Ready",
+          statusClass: "bg-emerald-100 text-emerald-800"
+        },
+        {
+          id: "T-088",
+          plate: "B 7942 KGA",
+          year: "2023",
+          color: "Electric Navy",
+          chassis: "Scania K410IB 6x2*4",
+          vin: "YS2K6X20002145920",
+          engine: "DC13-107-Euro5",
+          body: "Laksana Legacy SR3 Double Decker",
+          type: "Kombinasi (34 Seat)",
+          layout: "Lower: 6 Sleeper • Upper: 28 Exec",
+          odo: "218.490 Km",
+          pool: "Tol Cipali KM 166",
+          status: "On-Trip",
+          statusClass: "bg-blue-100 text-blue-800"
+        },
+        {
+          id: "T-102",
+          plate: "AD 1880 CF",
+          year: "2023",
+          color: "Grey Silver",
+          chassis: "Hino RM280 Space Frame",
+          vin: "MHHJ8JL89PK009381",
+          engine: "J08E-WD-Euro4",
+          body: "Tentrem Avante H8 Facelift",
+          type: "Super Executive (28 Seat)",
+          layout: "Konfigurasi 2-2 + Legrest",
+          odo: "142.100 Km",
+          pool: "Pool Solo Tirtonadi",
+          status: "Standby",
+          statusClass: "bg-amber-100 text-amber-800"
+        },
+        {
+          id: "T-044",
+          plate: "L 7801 UA",
+          year: "2022",
+          color: "Sapphire Cyan",
+          chassis: "Mercedes-Benz O 500 RS 1836",
+          vin: "WDB3821031A562309",
+          engine: "OM457LA.E3/1-984210",
+          body: "Adiputro Jetbus 3+ SHD",
+          type: "Executive (30 Seat)",
+          layout: "Konfigurasi 2-2 USB port",
+          odo: "312.800 Km",
+          pool: "Bengkel Pulogebang",
+          status: "Under Maintenance",
+          statusClass: "bg-orange-100 text-orange-800"
+        }
+      ];
+
+      const activeBus = buses.find((b) => b.id === selectedBus) || buses[0];
+      const filtered = buses.filter(b => 
+        b.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        b.plate.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.chassis.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+      return (
+        <div className="flex flex-col w-full space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-1.5 text-primary text-xs uppercase font-bold tracking-wider mb-1">
+                <span className="material-symbols-outlined text-[16px]">directions_bus</span>
+                <span>Modul 02 • Inventaris & Rolling Stock AKAP</span>
+              </div>
+              <h1 className="text-2xl font-bold text-on-surface tracking-tight">Master Data Armada & Sasis</h1>
+              <p className="text-xs text-on-surface-variant">Manajemen registrasi sasis heavy-duty, karoseri bodi, konfigurasi kursi, dan status operasional.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowAddModal(true)} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-xs font-semibold rounded-lg shadow-sm hover:bg-primary-hover transition-all">
+                <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                Tambah Unit Armada Baru
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex items-center justify-between">
+              <div>
+                <span className="text-xs text-on-surface-variant">Total Terdaftar</span>
+                <div className="text-2xl font-bold text-on-surface mt-1">148 <span className="text-xs font-normal text-on-surface-variant">Bus</span></div>
+                <span className="text-[11px] text-emerald-600 font-medium">132 Siap Jalan</span>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-blue-50 text-primary flex items-center justify-center">
+                <span className="material-symbols-outlined">airport_shuttle</span>
+              </div>
+            </div>
+
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+              <span className="text-xs text-on-surface-variant">Karoseri Terbanyak</span>
+              <div className="text-sm font-bold text-on-surface mt-1">Adiputro Jetbus 5</div>
+              <div className="w-full bg-surface-container-high rounded-full h-1.5 mt-2">
+                <div className="bg-primary h-1.5 rounded-full" style={{ width: "39%" }}></div>
+              </div>
+              <span className="text-[11px] text-on-surface-variant mt-1 block">58 Unit (39%)</span>
+            </div>
+
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+              <span className="text-xs text-on-surface-variant">Powertrain Utama</span>
+              <div className="text-sm font-bold text-on-surface mt-1">Mercedes-Benz OH</div>
+              <div className="w-full bg-surface-container-high rounded-full h-1.5 mt-2">
+                <div className="bg-primary h-1.5 rounded-full" style={{ width: "52%" }}></div>
+              </div>
+              <span className="text-[11px] text-on-surface-variant mt-1 block">78 Unit (52%)</span>
+            </div>
+
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20 flex items-center justify-between">
+              <div>
+                <span className="text-xs text-on-surface-variant">Rerata Utilisasi</span>
+                <div className="text-2xl font-bold text-on-surface mt-1">18.420 <span className="text-xs font-normal text-on-surface-variant">KM/bln</span></div>
+                <span className="text-[11px] text-emerald-600 font-medium">+6.4% Efisiensi</span>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-secondary-fixed text-primary flex items-center justify-center">
+                <span className="material-symbols-outlined">speed</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Table & Detail Preview Bento */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            <div className="xl:col-span-8 space-y-4">
+              <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden">
+                <div className="p-3 bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-surface-container">
+                  <div className="relative w-full sm:w-64">
+                    <span className="material-symbols-outlined absolute left-2.5 top-2 text-on-surface-variant text-[18px]">search</span>
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Cari nopol, lambung, chassis..."
+                      className="w-full bg-surface-container-lowest text-xs rounded-lg pl-8 pr-3 py-1.5 border border-outline-variant/30 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <span className="text-xs text-on-surface-variant font-medium">Klik baris untuk preview spesifikasi</span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="bg-surface-container text-on-surface-variant uppercase font-semibold">
+                        <th className="py-3 px-4">No. Lambung / Plat</th>
+                        <th className="py-3 px-4">Sasis & Powertrain</th>
+                        <th className="py-3 px-4">Karoseri</th>
+                        <th className="py-3 px-4">Odo & Lokasi</th>
+                        <th className="py-3 px-4">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-container">
+                      {filtered.map((b) => (
+                        <tr
+                          key={b.id}
+                          onClick={() => setSelectedBus(b.id)}
+                          className={`cursor-pointer transition-colors ${
+                            selectedBus === b.id ? "bg-blue-50/60 font-semibold" : "hover:bg-surface-container-low/60"
+                          }`}
+                        >
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="w-9 h-9 rounded-lg bg-blue-100 text-primary flex items-center justify-center font-bold text-xs">
+                                {b.id}
+                              </span>
+                              <div>
+                                <span className="font-bold text-on-surface block">{b.plate}</span>
+                                <span className="text-[11px] text-on-surface-variant">{b.year} • {b.color}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-on-surface block">{b.chassis}</span>
+                            <span className="font-mono text-[10px] text-on-surface-variant">{b.vin}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span>{b.body}</span>
+                            <span className="text-[10px] text-outline block">{b.type}</span>
+                          </td>
+                          <td className="py-3 px-4 font-mono">
+                            <span className="font-bold text-on-surface">{b.odo}</span>
+                            <span className="text-[10px] text-primary block font-sans">{b.pool}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${b.statusClass}`}>
+                              {b.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Quick Preview Panel */}
+            <div className="xl:col-span-4 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 p-5 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-surface-container">
+                <span className="text-xs uppercase font-bold text-primary tracking-wider">Quick Preview Sasis</span>
+                <span className="font-mono font-bold bg-primary text-white text-xs px-2 py-0.5 rounded">{activeBus.id}</span>
+              </div>
+
+              <div className="relative w-full h-36 rounded-lg overflow-hidden bg-surface-container">
+                <img
+                  src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&auto=format&fit=crop&q=80"
+                  alt="Bus preview"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-black/70 text-white text-[10px] font-bold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Siap Dispatch
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-base font-bold text-on-surface">{activeBus.plate}</h3>
+                <p className="text-xs text-on-surface-variant">{activeBus.body}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs p-3 rounded-lg bg-surface-container-low">
+                <div>
+                  <span className="text-on-surface-variant block text-[11px]">Tipe Sasis</span>
+                  <span className="font-semibold text-on-surface">{activeBus.chassis}</span>
+                </div>
+                <div>
+                  <span className="text-on-surface-variant block text-[11px]">Tangki BBM</span>
+                  <span className="font-semibold text-on-surface">400 L BioSolar</span>
+                </div>
+                <div>
+                  <span className="text-on-surface-variant block text-[11px]">Nomor Mesin</span>
+                  <span className="font-mono text-[10px] font-semibold text-on-surface truncate block">{activeBus.engine}</span>
+                </div>
+                <div>
+                  <span className="text-on-surface-variant block text-[11px]">Odo Berjalan</span>
+                  <span className="font-bold text-primary font-mono">{activeBus.odo}</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[11px] font-bold uppercase text-on-surface-variant tracking-wider block mb-1.5">Fasilitas Kabin</span>
+                <div className="flex flex-wrap gap-1">
+                  <span className="px-2 py-0.5 rounded bg-surface-container text-[11px] text-on-surface">Toilet Duduk</span>
+                  <span className="px-2 py-0.5 rounded bg-surface-container text-[11px] text-on-surface">Legrest Electric</span>
+                  <span className="px-2 py-0.5 rounded bg-surface-container text-[11px] text-on-surface">WiFi On-board</span>
+                  <span className="px-2 py-0.5 rounded bg-surface-container text-[11px] text-on-surface">AC Denso Clean</span>
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button onClick={() => alert(`Histori pemeliharaan untuk armada ${activeBus.id} berhasil diunduh.`)} className="flex-1 py-2 rounded bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-on-surface">
+                  Histori Servis
+                </button>
+                <button onClick={() => alert(`Pengeditan profil bus ${activeBus.id} dibuka.`)} className="flex-1 py-2 rounded bg-primary text-white hover:bg-primary-hover text-xs font-semibold">
+                  Ubah Profil
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Modal Registrasi Baru */}
+          {showAddModal && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-surface-container-lowest rounded-xl max-w-lg w-full p-5 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b pb-3">
+                  <h3 className="text-base font-bold text-on-surface">Registrasi Armada Baru</h3>
+                  <button onClick={() => setShowAddModal(false)} className="text-outline hover:text-on-surface">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); alert("Armada baru berhasil didaftarkan ke sistem!"); setShowAddModal(false); }} className="space-y-3 text-xs">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-semibold block mb-1">Nomor Lambung</label>
+                      <input required placeholder="Contoh: T-150" className="w-full p-2 bg-surface-container-low rounded border border-outline-variant/30" />
+                    </div>
+                    <div>
+                      <label className="font-semibold block mb-1">Plat Polisi</label>
+                      <input required placeholder="Contoh: B 7999 TAY" className="w-full p-2 bg-surface-container-low rounded border border-outline-variant/30" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-semibold block mb-1">Sasis Pabrikan</label>
+                    <select className="w-full p-2 bg-surface-container-low rounded border border-outline-variant/30">
+                      <option>Mercedes-Benz OH 1626 L Air Suspension</option>
+                      <option>Scania K410IB 6x2*4 Opticruise</option>
+                      <option>Hino RM280 Space Frame</option>
+                      <option>Volvo B11R 430HP</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-semibold block mb-1">Pabrikan Karoseri</label>
+                    <select className="w-full p-2 bg-surface-container-low rounded border border-outline-variant/30">
+                      <option>Adiputro - Jetbus 5 MHD/SHD</option>
+                      <option>Laksana - Legacy SR3 Suites Class</option>
+                      <option>Tentrem - Avante H8 / D2</option>
+                    </select>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button type="button" onClick={() => setShowAddModal(false)} className="px-3 py-1.5 bg-surface-container rounded font-semibold text-on-surface">Batal</button>
+                    <button type="submit" className="px-4 py-1.5 bg-primary text-white rounded font-semibold">Simpan Unit</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- SCREEN 3: TRACKING BAN & AKI ---
+    function TrackingBanScreen() {
+      const [selectedWheel, setSelectedWheel] = useState("2L-I");
+      const [activeTab, setActiveTab] = useState("tire"); // 'tire' | 'battery' | 'log'
+      const [showRotateModal, setShowRotateModal] = useState(false);
+
+      const wheels = {
+        "1L": { name: "Michelin X Multi Z", serial: "DOT MC-440-2024", odo: "48.200 km", tread: "11.0 mm", status: "Aman", badge: "1L Steer Kiri", color: "bg-emerald-600", psi: "125 PSI" },
+        "1R": { name: "Michelin X Multi Z", serial: "DOT MC-440-2024", odo: "48.200 km", tread: "10.5 mm", status: "Aman", badge: "1R Steer Kanan", color: "bg-emerald-600", psi: "124 PSI" },
+        "2L-O": { name: "Bridgestone R150", serial: "DOT BS-311-2311", odo: "78.400 km", tread: "5.8 mm", status: "Waspada", badge: "2L-Outer (Drive)", color: "bg-amber-500", psi: "118 PSI" },
+        "2L-I": { name: "GT Radial Giti GAR820", serial: "DOT 93 U7 4122", odo: "94.320 km", tread: "4.6 mm", status: "Perhatian", badge: "2L-Inner (Drive)", color: "bg-amber-500", psi: "120 PSI" },
+        "2R-I": { name: "Bridgestone R150", serial: "DOT BS-441-2401", odo: "52.100 km", tread: "9.2 mm", status: "Aman", badge: "2R-Inner (Drive)", color: "bg-emerald-600", psi: "122 PSI" },
+        "2R-O": { name: "Gajah Tunggal Super Lug", serial: "DOT GT-112-2119", odo: "118.500 km", tread: "3.1 mm", status: "Wajib Ganti", badge: "2R-Outer (Drive)", color: "bg-error", psi: "112 PSI" },
+        "SP-1": { name: "Goodyear Marathon LHS", serial: "DOT GY-884-2402", odo: "12.000 km", tread: "11.4 mm", status: "Standby", badge: "SP-1 Ban Serep", color: "bg-emerald-600", psi: "125 PSI" }
+      };
+
+      const cur = wheels[selectedWheel] || wheels["2L-I"];
+
+      return (
+        <div className="flex flex-col w-full space-y-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs text-primary font-bold uppercase mb-1">
+                <span>Modul 2.3 & 4.3</span>
+                <span>•</span>
+                <span className="text-on-surface-variant font-medium">Workshop & Lifecycle Hardware</span>
+              </div>
+              <h1 className="text-2xl font-bold text-on-surface tracking-tight">Pelacakan Komponen Ban & Aki</h1>
+              <p className="text-xs text-on-surface-variant">Audit individual serial DOT ban radial, rotasi alur tapak, dan voltase baterai aki 24V.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowRotateModal(true)} className="px-3.5 py-2 rounded-lg bg-primary text-white text-xs font-semibold shadow-sm hover:bg-primary-hover flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[18px]">swap_horizontal_circle</span>
+                Rotasi Posisi Ban
+              </button>
+            </div>
+          </div>
+
+          {/* Sub Navigation Bar */}
+          <div className="bg-surface-container-lowest p-1.5 rounded-xl shadow-sm border border-outline-variant/20 flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab("tire")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 ${
+                activeTab === "tire" ? "bg-primary text-white" : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">hub</span>
+              Visualisasi Roda
+            </button>
+            <button
+              onClick={() => setActiveTab("battery")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 ${
+                activeTab === "battery" ? "bg-primary text-white" : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">bolt</span>
+              Tracking Aki 24V & Inverter
+            </button>
+            <button
+              onClick={() => setActiveTab("log")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 ${
+                activeTab === "log" ? "bg-primary text-white" : "text-on-surface-variant hover:bg-surface-container"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">history</span>
+              Log Pergantian Pool
+            </button>
+          </div>
+
+          {activeTab === "tire" && (
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+              {/* Chassis Map */}
+              <div className="xl:col-span-7 bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-3 border-b border-surface-container">
+                  <div>
+                    <h3 className="font-bold text-sm text-on-surface">Armada TY-082 (B 7199 UGA)</h3>
+                    <span className="text-[11px] text-on-surface-variant">MB OH 1626 • 6-Wheeler Bus</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px]">
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> &gt;8mm</span>
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> 4-8mm</span>
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-error"></span> &lt;4mm</span>
+                  </div>
+                </div>
+
+                {/* Simulated Bus Frame */}
+                <div className="my-6 p-6 bg-surface-container-low rounded-2xl flex flex-col items-center max-w-md mx-auto w-full">
+                  <span className="text-[10px] font-bold text-outline uppercase tracking-wider mb-4">Front Steering Axle</span>
+
+                  {/* Steer Axle */}
+                  <div className="w-full flex items-center justify-between px-4">
+                    <button
+                      onClick={() => setSelectedWheel("1L")}
+                      className={`p-2 rounded-lg text-white font-mono text-xs flex flex-col items-center ${wheels["1L"].color} ${selectedWheel === "1L" ? "ring-4 ring-primary" : ""}`}
+                    >
+                      <span className="font-bold">1L</span>
+                      <span className="text-[10px]">11mm</span>
+                    </button>
+                    <div className="h-2 flex-1 bg-outline-variant/40 mx-4 rounded-full"></div>
+                    <button
+                      onClick={() => setSelectedWheel("1R")}
+                      className={`p-2 rounded-lg text-white font-mono text-xs flex flex-col items-center ${wheels["1R"].color} ${selectedWheel === "1R" ? "ring-4 ring-primary" : ""}`}
+                    >
+                      <span className="font-bold">1R</span>
+                      <span className="text-[10px]">10.5mm</span>
+                    </button>
+                  </div>
+
+                  <div className="w-1 h-16 bg-outline-variant/30 my-4"></div>
+                  <span className="text-[10px] font-bold text-outline uppercase tracking-wider mb-2">Drive Axle (Dual)</span>
+
+                  {/* Rear Dual Axle */}
+                  <div className="w-full flex items-center justify-between px-2">
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => setSelectedWheel("2L-O")}
+                        className={`p-2 rounded-lg text-white font-mono text-xs flex flex-col items-center ${wheels["2L-O"].color} ${selectedWheel === "2L-O" ? "ring-4 ring-primary" : ""}`}
+                      >
+                        <span className="font-bold">2L-O</span>
+                        <span className="text-[10px]">5.8mm</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedWheel("2L-I")}
+                        className={`p-2 rounded-lg text-white font-mono text-xs flex flex-col items-center ${wheels["2L-I"].color} ${selectedWheel === "2L-I" ? "ring-4 ring-primary" : ""}`}
+                      >
+                        <span className="font-bold">2L-I</span>
+                        <span className="text-[10px]">4.6mm</span>
+                      </button>
+                    </div>
+
+                    <div className="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-[10px] font-bold text-slate-600">AX-2</div>
+
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => setSelectedWheel("2R-I")}
+                        className={`p-2 rounded-lg text-white font-mono text-xs flex flex-col items-center ${wheels["2R-I"].color} ${selectedWheel === "2R-I" ? "ring-4 ring-primary" : ""}`}
+                      >
+                        <span className="font-bold">2R-I</span>
+                        <span className="text-[10px]">9.2mm</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedWheel("2R-O")}
+                        className={`p-2 rounded-lg text-white font-mono text-xs flex flex-col items-center ${wheels["2R-O"].color} ${selectedWheel === "2R-O" ? "ring-4 ring-primary" : ""}`}
+                      >
+                        <span className="font-bold">2R-O</span>
+                        <span className="text-[10px]">3.1mm</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-3 border-t w-full flex justify-center">
+                    <button
+                      onClick={() => setSelectedWheel("SP-1")}
+                      className={`px-3 py-1.5 rounded-lg bg-surface-container-lowest text-xs font-semibold flex items-center gap-1.5 shadow-xs ${selectedWheel === "SP-1" ? "ring-2 ring-primary" : ""}`}
+                    >
+                      <span className="material-symbols-outlined text-[16px] text-emerald-600">support</span>
+                      <span>Ban Serep SP-1 (11.4mm)</span>
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-on-surface-variant text-center">Klik roda pada diagram di atas untuk memeriksa riwayat alur fisik.</p>
+              </div>
+
+              {/* Detail Selected Tire */}
+              <div className="xl:col-span-5 bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/20 space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-surface-container">
+                  <div>
+                    <span className="px-2 py-0.5 rounded bg-primary text-white font-mono text-xs font-bold">{cur.badge}</span>
+                    <h3 className="text-base font-bold text-on-surface mt-1.5">{cur.name}</h3>
+                    <span className="text-xs text-on-surface-variant">{cur.serial}</span>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                    cur.status === "Aman" ? "bg-emerald-100 text-emerald-800" :
+                    cur.status === "Waspada" || cur.status === "Perhatian" ? "bg-amber-100 text-amber-800" :
+                    "bg-error-container text-error"
+                  }`}>{cur.status}</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 rounded bg-surface-container-low">
+                    <span className="text-on-surface-variant block text-[11px]">Tebal Alur</span>
+                    <span className="text-lg font-bold text-on-surface">{cur.tread}</span>
+                  </div>
+                  <div className="p-2.5 rounded bg-surface-container-low">
+                    <span className="text-on-surface-variant block text-[11px]">Jarak Tempuh Ban</span>
+                    <span className="text-lg font-bold text-on-surface font-mono">{cur.odo}</span>
+                  </div>
+                  <div className="p-2.5 rounded bg-surface-container-low">
+                    <span className="text-on-surface-variant block text-[11px]">Tekanan TPMS</span>
+                    <span className="text-sm font-bold text-emerald-700">{cur.psi}</span>
+                  </div>
+                  <div className="p-2.5 rounded bg-surface-container-low">
+                    <span className="text-on-surface-variant block text-[11px]">Ukuran Ban</span>
+                    <span className="text-sm font-bold text-on-surface">295/80 R22.5</span>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-amber-50 rounded-lg text-amber-900 text-xs">
+                  <span className="font-bold block mb-1">Rekomendasi AI Workshop</span>
+                  <p>Lakukan rotasi silang roda dalam 3.000 KM ke depan agar keausan tidak condong ke sisi luar tapak.</p>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => setShowRotateModal(true)} className="flex-1 py-2 bg-primary text-white text-xs font-semibold rounded hover:bg-primary-hover">
+                    Tukar Posisi (Rotasi)
+                  </button>
+                  <button onClick={() => alert("Form pengiriman vulkanisir ke PT Goodyear Bandag telah dibuat.")} className="flex-1 py-2 bg-surface-container text-on-surface text-xs font-semibold rounded hover:bg-surface-container-high">
+                    Kirim Vulkanisir
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "battery" && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/20 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-on-surface-variant uppercase">Starter Bank 1 (Primary)</span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold">12.8V</span>
+                </div>
+                <h4 className="font-bold text-sm text-on-surface">GS Yuasa N120 HD</h4>
+                <div className="text-xs text-on-surface-variant space-y-1 font-mono">
+                  <div>SN: GS-HD-2409-8819A</div>
+                  <div>Uji CCA: 890 CCA (Optimal)</div>
+                </div>
+              </div>
+              <div className="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/20 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-on-surface-variant uppercase">Starter Bank 2 (Pair)</span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold">12.7V</span>
+                </div>
+                <h4 className="font-bold text-sm text-on-surface">GS Yuasa N120 HD</h4>
+                <div className="text-xs text-on-surface-variant space-y-1 font-mono">
+                  <div>SN: GS-HD-2409-8820B</div>
+                  <div>Uji CCA: 875 CCA (Optimal)</div>
+                </div>
+              </div>
+              <div className="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/20 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-on-surface-variant uppercase">Aux Inverter AC 220V</span>
+                  <span className="px-2 py-0.5 rounded bg-blue-100 text-primary text-xs font-bold">223 VAC</span>
+                </div>
+                <h4 className="font-bold text-sm text-on-surface">TBE Pure Sine Wave 3000W</h4>
+                <div className="text-xs text-on-surface-variant space-y-1">
+                  <div>Beban: 32 Seat USB & Audio AVOD</div>
+                  <div>Efisiensi Output: 92.4%</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "log" && (
+            <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/20">
+              <h3 className="text-sm font-bold text-on-surface mb-3">Histori Mutasi & Rotasi Terakhir</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-surface-container-low text-on-surface-variant uppercase font-semibold">
+                      <th className="py-2.5 px-3">Tanggal & Pool</th>
+                      <th className="py-2.5 px-3">No. Lambung</th>
+                      <th className="py-2.5 px-3">Serial Ban</th>
+                      <th className="py-2.5 px-3">Transaksi</th>
+                      <th className="py-2.5 px-3">Mekanik</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-surface-container">
+                    <tr>
+                      <td className="py-3 px-3 font-mono">24 Okt 2024, 09:20</td>
+                      <td className="py-3 px-3 font-bold text-primary">TY-082</td>
+                      <td className="py-3 px-3 font-medium">DOT 93 U7 4122 (GT Radial)</td>
+                      <td className="py-3 px-3"><span className="px-2 py-0.5 rounded-full bg-blue-50 text-primary font-bold">Rotasi 1R → 2L-I</span></td>
+                      <td className="py-3 px-3">Hendra Saputra</td>
+                    </tr>
+                    <tr>
+                      <td className="py-3 px-3 font-mono">23 Okt 2024, 16:45</td>
+                      <td className="py-3 px-3 font-bold text-primary">TY-104</td>
+                      <td className="py-3 px-3 font-medium">DOT BR-882-0921 (Bridgestone)</td>
+                      <td className="py-3 px-3"><span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 font-bold">Kirim Vulkanisir</span></td>
+                      <td className="py-3 px-3">Bambang S.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Rotasi */}
+          {showRotateModal && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-surface-container-lowest rounded-xl max-w-md w-full p-5 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b pb-3">
+                  <h3 className="text-base font-bold text-on-surface">Catat Rotasi Roda Bus</h3>
+                  <button onClick={() => setShowRotateModal(false)} className="text-outline">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); alert("Rotasi berhasil diverifikasi dan SPK mekanik diterbitkan."); setShowRotateModal(false); }} className="space-y-3 text-xs">
+                  <div>
+                    <label className="font-semibold block mb-1">Armada Bus</label>
+                    <input disabled value="TY-082 (Mercedes-Benz OH 1626)" className="w-full p-2 bg-surface-container rounded border border-outline-variant/30" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="font-semibold block mb-1">Posisi Asal</label>
+                      <select className="w-full p-2 bg-surface-container-low rounded border border-outline-variant/30">
+                        <option>2L-Inner (4.6mm)</option>
+                        <option>2R-Outer (3.1mm)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="font-semibold block mb-1">Posisi Tujuan</label>
+                      <select className="w-full p-2 bg-surface-container-low rounded border border-outline-variant/30">
+                        <option>SP-1 (Ban Serep)</option>
+                        <option>1L (Steer Kiri)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button type="button" onClick={() => setShowRotateModal(false)} className="px-3 py-1.5 bg-surface-container rounded font-semibold">Batal</button>
+                    <button type="submit" className="px-4 py-1.5 bg-primary text-white rounded font-semibold">Simpan & Terbitkan SPK</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- SCREEN 4: GUDANG SUKU CADANG ---
+    function GudangScreen() {
+      const [filterCategory, setFilterCategory] = useState("all");
+
+      const parts = [
+        { sku: "FLT-SCN-092", name: "Filter Oli Mesin Scania 15W40", rack: "RAK-A3-04", stock: "3 Pcs", min: "12 Pcs", price: "Rp 485.000", total: "Rp 1.455.000", status: "Kritis", isCrit: true },
+        { sku: "ADR-WBC-011", name: "Air Dryer Cartridge Pneumatic", rack: "RAK-B2-01", stock: "18 Pcs", min: "6 Pcs", price: "Rp 890.000", total: "Rp 16.020.000", status: "Prima", isCrit: false },
+        { sku: "OIL-DLV-1540", name: "Oli Delvac MX 15W-40 (Drum)", rack: "ZONE-OIL-01", stock: "1.240 L", min: "400 L", price: "Rp 46.500/L", total: "Rp 57.660.000", status: "Prima", isCrit: false },
+        { sku: "SUS-CNT-941", name: "Balon Air Suspension Bellow 941 MB", rack: "RAK-C1-09", stock: "9 Pcs", min: "8 Pcs", price: "Rp 1.750.000", total: "Rp 15.750.000", status: "Reorder", isCrit: true },
+        { sku: "BRK-TX-504", name: "Kampas Rem Tromol Heavy Duty", rack: "RAK-D4-02", stock: "14 Set", min: "5 Set", price: "Rp 1.150.000", total: "Rp 16.100.000", status: "Aman", isCrit: false },
+        { sku: "FLT-RCR-1000", name: "Filter Solar Separator Racor 1000FH", rack: "RAK-A1-12", stock: "32 Pcs", min: "10 Pcs", price: "Rp 320.000", total: "Rp 10.240.000", status: "Prima", isCrit: false }
+      ];
+
+      return (
+        <div className="flex flex-col w-full space-y-6">
+          <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs uppercase font-bold text-primary mb-1">
+                <span>Modul 05 • Gudang Suku Cadang & Logistik</span>
+                <span className="text-emerald-600 font-semibold">• Auto-Sync SPK Aktif</span>
+              </div>
+              <h1 className="text-2xl font-bold text-on-surface tracking-tight">Gudang Suku Cadang & Manajemen Stok Pool</h1>
+              <p className="text-xs text-on-surface-variant">Monitoring stok suku cadang AKAP antar-pool, reorder point (ROP), dan pemotongan otomatis SPK.</p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button onClick={() => alert("Fitur Stock Opname QR Scanner diaktifkan.")} className="px-3 py-2 bg-surface-container text-on-surface text-xs font-semibold rounded-lg hover:bg-surface-container-high flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+                Stock Opname
+              </button>
+              <button onClick={() => alert("Form pengiriman mutasi antar pool dibuka.")} className="px-3 py-2 bg-secondary-container text-on-secondary-container text-xs font-semibold rounded-lg hover:bg-secondary-fixed flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
+                Kirim Mutasi Antar-Pool
+              </button>
+              <button onClick={() => alert("Form Penerimaan Barang (PO Baru) dibuka.")} className="px-3.5 py-2 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-hover flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                + Penerimaan Barang (PO)
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+              <span className="text-xs text-on-surface-variant">Total SKU</span>
+              <div className="text-2xl font-bold text-on-surface mt-1">1.450 SKU</div>
+              <span className="text-[11px] text-on-surface-variant">Gudang Pulogebang</span>
+            </div>
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+              <span className="text-xs text-on-surface-variant">Stok Aman</span>
+              <div className="text-2xl font-bold text-emerald-700 mt-1">1.382 SKU</div>
+              <span className="text-[11px] text-emerald-600 font-semibold">95.3% Level Optimal</span>
+            </div>
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+              <span className="text-xs text-on-surface-variant">Mendekati ROP</span>
+              <div className="text-2xl font-bold text-amber-700 mt-1">45 SKU</div>
+              <span className="text-[11px] text-amber-600 font-semibold">Perlu Reorder</span>
+            </div>
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+              <span className="text-xs text-on-surface-variant">Stok Kritis</span>
+              <div className="text-2xl font-bold text-error mt-1">23 SKU</div>
+              <span className="text-[11px] text-error font-semibold">Prioritas Pengadaan</span>
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden">
+            <div className="p-4 bg-surface-container-low flex flex-col sm:flex-row justify-between items-center gap-3 border-b border-surface-container">
+              <h3 className="text-sm font-bold text-on-surface">Katalog Suku Cadang Aktif</h3>
+              <div className="flex gap-2">
+                <button onClick={() => setFilterCategory("all")} className={`px-2.5 py-1 rounded text-xs font-semibold ${filterCategory === "all" ? "bg-primary text-white" : "bg-surface-container text-on-surface"}`}>Semua</button>
+                <button onClick={() => setFilterCategory("crit")} className={`px-2.5 py-1 rounded text-xs font-semibold ${filterCategory === "crit" ? "bg-primary text-white" : "bg-surface-container text-on-surface"}`}>Kritis & ROP</button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-surface-container text-on-surface-variant uppercase font-semibold">
+                    <th className="py-3 px-4">Part & SKU</th>
+                    <th className="py-3 px-4">Lokasi Rak</th>
+                    <th className="py-3 px-4 text-center">Stok Fisik</th>
+                    <th className="py-3 px-4 text-right">Harga Satuan</th>
+                    <th className="py-3 px-4 text-right">Total Nilai</th>
+                    <th className="py-3 px-4 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-container">
+                  {parts.filter(p => filterCategory === "all" || p.isCrit).map((p) => (
+                    <tr key={p.sku} className={`hover:bg-surface-container-low/50 ${p.status === "Kritis" ? "bg-red-50/40" : ""}`}>
+                      <td className="py-3 px-4">
+                        <span className="font-bold text-on-surface block">{p.name}</span>
+                        <span className="font-mono text-[11px] text-outline">{p.sku}</span>
+                      </td>
+                      <td className="py-3 px-4 font-mono">{p.rack}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`font-bold text-sm ${p.status === "Kritis" ? "text-error" : "text-on-surface"}`}>{p.stock}</span>
+                        <span className={`block text-[10px] ${p.status === "Kritis" ? "text-error font-bold" : "text-on-surface-variant"}`}>Min: {p.min}</span>
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono">{p.price}</td>
+                      <td className="py-3 px-4 text-right font-mono font-bold text-on-surface">{p.total}</td>
+                      <td className="py-3 px-4 text-center">
+                        <button onClick={() => alert(`PO atau Pengeluaran untuk SKU ${p.sku} berhasil diproses.`)} className="px-2.5 py-1 bg-surface-container hover:bg-primary hover:text-white rounded font-semibold text-xs transition-colors">
+                          Pesan / SPK
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- SCREEN 5: LEGALITAS & REGULASI KIR / KPS ---
+    function LegalitasScreen() {
+      const legalData = [
+        { id: "TY-044", plate: "L 7801 UA", route: "Jakarta - Surabaya • Solo", kir: "24 Okt 2024 (Expired)", kps: "08 Sep 2026", stnk: "14 Nov 2024", status: "Grounded", statusClass: "bg-error text-white" },
+        { id: "TY-021", plate: "B 7741 TGA", route: "Jakarta - Madiun • Pulogebang", kir: "28 Okt 2024 (H-3)", kps: "19 Nov 2026", stnk: "05 Feb 2025", status: "Restricted", statusClass: "bg-amber-100 text-amber-900" },
+        { id: "TY-064", plate: "B 7190 KGA", route: "Jakarta - Malang • Surabaya", kir: "12 Jan 2025", kps: "30 Okt 2024 (H-5)", stnk: "18 Agu 2025", status: "Restricted", statusClass: "bg-amber-100 text-amber-900" },
+        { id: "TY-015", plate: "B 7102 SGA", route: "Jakarta - Yogyakarta • Pulogebang", kir: "18 Mar 2025", kps: "14 Agu 2027", stnk: "12 Des 2024", status: "Road Legal", statusClass: "bg-emerald-100 text-emerald-800" },
+        { id: "TY-088", plate: "B 7922 PGA", route: "Bandung - Wonosobo • Bandung", kir: "20 Mei 2025", kps: "02 Feb 2028", stnk: "19 Apr 2025", status: "Road Legal", statusClass: "bg-emerald-100 text-emerald-800" }
+      ];
+
+      return (
+        <div className="flex flex-col w-full space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-2xl font-bold text-on-surface tracking-tight">Legalitas & Dokumen Armada</h1>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">SPIONAM Terhubung</span>
+              </div>
+              <p className="text-xs text-on-surface-variant">Monitoring kepatuhan kelaikan Uji KIR, Kartu Pengawasan (KPS), dan Pajak STNK.</p>
+            </div>
+            <button onClick={() => alert("Pendaftaran izin berkala KIR/KPS baru dibuka.")} className="px-4 py-2 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-hover shadow-sm">
+              + Registrasi Dokumen
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-surface-container-lowest p-4 rounded-xl border-l-4 border-l-emerald-500 shadow-sm">
+              <span className="text-xs text-on-surface-variant uppercase font-bold">Siap Jalan</span>
+              <div className="text-2xl font-bold text-on-surface mt-1">140 <span className="text-xs font-normal text-on-surface-variant">Bus (94.6%)</span></div>
+            </div>
+            <div className="bg-surface-container-lowest p-4 rounded-xl border-l-4 border-l-amber-400 shadow-sm">
+              <span className="text-xs text-amber-800 uppercase font-bold">Perlu Perpanjangan (&lt;14 Hari)</span>
+              <div className="text-2xl font-bold text-amber-700 mt-1">5 <span className="text-xs font-normal text-on-surface-variant">Unit</span></div>
+            </div>
+            <div className="bg-surface-container-lowest p-4 rounded-xl border-l-4 border-l-error shadow-sm">
+              <span className="text-xs text-error uppercase font-bold">Grounded / Kunci SPJ</span>
+              <div className="text-2xl font-bold text-error mt-1">3 <span className="text-xs font-normal text-on-surface-variant">Unit</span></div>
+            </div>
+          </div>
+
+          {/* Table Legalitas */}
+          <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden">
+            <div className="p-3 bg-surface-container-low flex justify-between items-center text-xs">
+              <span className="font-semibold text-on-surface">Daftar Status Uji Berkala & SPIONAM</span>
+              <span className="text-on-surface-variant">Sinkronisasi otomatis sistem SPIONAM</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-surface-container text-on-surface-variant uppercase font-semibold">
+                    <th className="py-3 px-4">Armada & Rute</th>
+                    <th className="py-3 px-4">Uji KIR Dishub</th>
+                    <th className="py-3 px-4">KPS SPIONAM</th>
+                    <th className="py-3 px-4">Pajak STNK</th>
+                    <th className="py-3 px-4 text-center">Status</th>
+                    <th className="py-3 px-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-container">
+                  {legalData.map((row) => (
+                    <tr key={row.id} className="hover:bg-surface-container-low/50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-primary">{row.id}</span>
+                          <span className="font-bold text-on-surface">{row.plate}</span>
+                        </div>
+                        <span className="text-[11px] text-outline block">{row.route}</span>
+                      </td>
+                      <td className="py-3 px-4 font-medium">{row.kir}</td>
+                      <td className="py-3 px-4">{row.kps}</td>
+                      <td className="py-3 px-4">{row.stnk}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${row.statusClass}`}>
+                          {row.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button onClick={() => alert(`Detail dokumen ${row.id} siap diproses.`)} className="px-2.5 py-1 bg-surface-container hover:bg-primary hover:text-white rounded font-semibold text-[11px] transition-colors">
+                          Kelola
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- SCREEN 6: SERAH TERIMA ANTAR-POOL & ODOMETER ---
+    function DispatchSerahTerimaScreen() {
+      const [inputOdo, setInputOdo] = useState("218490");
+
+      return (
+        <div className="flex flex-col w-full space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-on-surface tracking-tight">Serah Terima Antar-Pool & Log Odometer</h1>
+              <p className="text-xs text-on-surface-variant">Validasi mutasi bus AKAP, rekonsiliasi odometer fisik vs GPS CAN-bus, dan kelaikan operasional.</p>
+            </div>
+            <button onClick={() => alert("Form Check-In unit baru dibuka.")} className="px-4 py-2 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-hover shadow-sm">
+              + Check-In / Serah Terima
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Form Check-In Aktif */}
+            <div className="lg:col-span-7 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 p-5 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-surface-container">
+                <div className="flex items-center gap-3">
+                  <span className="px-2.5 py-1 rounded bg-primary text-white font-mono font-bold text-xs">TY-088</span>
+                  <div>
+                    <h3 className="font-bold text-sm text-on-surface">B 7942 KGA (Double Decker)</h3>
+                    <span className="text-[11px] text-on-surface-variant">Scania K410IB • Laksana SR3</span>
+                  </div>
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">Tiba di Ramp Pulogebang</span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-surface-container-low rounded-lg text-xs">
+                <div>
+                  <span className="text-outline block text-[10px]">Rute Operasi</span>
+                  <span className="font-semibold text-on-surface">Surabaya Waru → JKT</span>
+                </div>
+                <div>
+                  <span className="text-outline block text-[10px]">Driver Utama</span>
+                  <span className="font-semibold text-on-surface">Bambang Sutrisno</span>
+                </div>
+                <div>
+                  <span className="text-outline block text-[10px]">Sisa BBM Solar</span>
+                  <span className="font-bold text-primary">140 L (35%)</span>
+                </div>
+              </div>
+
+              {/* Odometer Reconciliation */}
+              <div className="p-4 rounded-xl bg-blue-50/40 border border-blue-100 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-on-surface">Komparasi CAN-bus vs Odometer Fisik</span>
+                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">Deviasi Normal (+2 KM)</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/20">
+                    <span className="text-[10px] text-outline block">GPS Telematics CAN-bus</span>
+                    <span className="font-mono text-base font-bold text-primary">218.488 KM</span>
+                  </div>
+                  <div className="p-3 bg-surface-container-lowest rounded-lg border border-primary/40 ring-2 ring-primary/10">
+                    <span className="text-[10px] text-primary font-semibold block">Input Fisik Dashboard</span>
+                    <input
+                      value={inputOdo}
+                      onChange={(e) => setInputOdo(e.target.value)}
+                      className="w-full font-mono text-base font-bold text-on-surface bg-transparent focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <span className="font-bold text-on-surface block">Checklist Kelaikan Cepat</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <label className="flex items-center gap-2 p-2 rounded bg-surface-container-low cursor-pointer">
+                    <input type="checkbox" defaultChecked className="rounded text-primary focus:ring-0" />
+                    <span>Dokumen STNK & KIR Fisik Lengkap</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 rounded bg-surface-container-low cursor-pointer">
+                    <input type="checkbox" defaultChecked className="rounded text-primary focus:ring-0" />
+                    <span>34 Selimut Laundry & Headset</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 rounded bg-surface-container-low cursor-pointer">
+                    <input type="checkbox" defaultChecked className="rounded text-primary focus:ring-0" />
+                    <span>Kaca Bebas Retak / Bodi Bersih</span>
+                  </label>
+                  <label className="flex items-center gap-2 p-2 rounded bg-surface-container-low cursor-pointer">
+                    <input type="checkbox" defaultChecked className="rounded text-primary focus:ring-0" />
+                    <span>Sanitasi Toilet & AC Bersih</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button onClick={() => alert("Check-in handover dan update Odometer berhasil disimpan!")} className="px-5 py-2.5 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-hover shadow-sm">
+                  Validasi & Simpan Check-In
+                </button>
+              </div>
+            </div>
+
+            {/* Right: Pool Distribution */}
+            <div className="lg:col-span-5 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 p-5 space-y-4">
+              <h3 className="font-bold text-sm text-on-surface">Distribusi Armada per Pool</h3>
+              <div className="space-y-2.5 text-xs">
+                <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/10 flex justify-between items-center">
+                  <div>
+                    <span className="font-bold text-on-surface block">Pool Pusat Pulogebang</span>
+                    <span className="text-emerald-700">26 Siap • 5 Cuci • 7 Bengkel</span>
+                  </div>
+                  <span className="font-mono font-bold text-sm text-primary">38 Unit</span>
+                </div>
+                <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/10 flex justify-between items-center">
+                  <div>
+                    <span className="font-bold text-on-surface block">Pool Surabaya Waru</span>
+                    <span className="text-emerald-700">17 Siap • 5 Bengkel</span>
+                  </div>
+                  <span className="font-mono font-bold text-sm text-primary">22 Unit</span>
+                </div>
+                <div className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/10 flex justify-between items-center">
+                  <div>
+                    <span className="font-bold text-on-surface block">Pool Solo Tirtonadi</span>
+                    <span className="text-emerald-700">12 Siap • 3 Bengkel</span>
+                  </div>
+                  <span className="font-mono font-bold text-sm text-primary">15 Unit</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- SCREEN 7: INCIDENT & ROAD TROUBLE ---
+    function IncidentScreen() {
+      const [showSOSModal, setShowSOSModal] = useState(false);
+
+      return (
+        <div className="flex flex-col w-full space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h1 className="text-2xl font-bold text-on-surface tracking-tight">Incident & Road Trouble Command Center</h1>
+                <span className="px-2.5 py-0.5 rounded-full bg-error-container text-error text-xs font-bold animate-pulse">3 Insiden Aktif</span>
+              </div>
+              <p className="text-xs text-on-surface-variant">Pusat kendali 24 jam respon breakdown armada, overstapel evakuasi penumpang, dan rescue derek tol.</p>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setShowSOSModal(true)} className="px-4 py-2 bg-error text-white text-xs font-bold rounded-lg shadow-sm hover:brightness-110 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-[18px]">emergency</span>
+                + Lapor Trouble Baru (SOS)
+              </button>
+            </div>
+          </div>
+
+          {/* Active Incident Spotlight */}
+          <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden">
+            <div className="bg-error text-white p-4 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[24px]">car_crash</span>
+                <div>
+                  <h3 className="font-bold text-base">INC-2024-104 • Tol Cipali KM 102+400 Jalur A</h3>
+                  <p className="text-xs opacity-90">Armada TY-019 (MB OH 1626) • Overheat & Selang Radiator Pecah</p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-white text-error font-bold text-xs">Prioritas Kritis</span>
+            </div>
+
+            <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div className="p-3 bg-surface-container-low rounded-lg space-y-1">
+                <span className="text-outline text-[10px] uppercase font-bold">Penumpang Terdampak</span>
+                <div className="text-lg font-bold text-on-surface">32 Jiwa (Penuh)</div>
+                <span className="text-emerald-700 font-semibold">Bus cadangan TY-045 meluncur</span>
+              </div>
+              <div className="p-3 bg-surface-container-low rounded-lg space-y-1">
+                <span className="text-outline text-[10px] uppercase font-bold">Service Car Respon</span>
+                <div className="text-lg font-bold text-primary">SC-01 Subang</div>
+                <span className="text-on-surface-variant">ETA 12 menit ke lokasi TKP</span>
+              </div>
+              <div className="p-3 bg-surface-container-low rounded-lg space-y-1">
+                <span className="text-outline text-[10px] uppercase font-bold">Tindakan Cepat</span>
+                <div className="flex gap-1.5 pt-1">
+                  <button onClick={() => alert("WhatsApp broadcast telah dikirim ke 32 penumpang.")} className="px-2.5 py-1 bg-surface-container hover:bg-surface-container-high rounded font-semibold text-[11px]">
+                    SMS 32 Pax
+                  </button>
+                  <button onClick={() => alert("Tiket overstapel penumpang disetujui ke TY-045.")} className="px-2.5 py-1 bg-primary text-white rounded font-semibold text-[11px]">
+                    Rilis Overstapel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SOS Modal */}
+          {showSOSModal && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-surface-container-lowest rounded-xl max-w-md w-full p-5 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b pb-3">
+                  <h3 className="text-base font-bold text-error">Registrasi Panggilan Darurat (SOS)</h3>
+                  <button onClick={() => setShowSOSModal(false)} className="text-outline"><span className="material-symbols-outlined">close</span></button>
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); alert("Laporan SOS telah disebarkan ke tim rescue dan derek tol."); setShowSOSModal(false); }} className="space-y-3 text-xs">
+                  <div>
+                    <label className="font-semibold block mb-1">Nomor Lambung</label>
+                    <input required placeholder="Contoh: TY-024" className="w-full p-2 bg-surface-container-low rounded border border-outline-variant/30" />
+                  </div>
+                  <div>
+                    <label className="font-semibold block mb-1">Kategori Masalah</label>
+                    <select className="w-full p-2 bg-surface-container-low rounded border border-outline-variant/30">
+                      <option>Overheat & Mesin / Radiator</option>
+                      <option>Pecah Ban / Roda</option>
+                      <option>Rem & Kompresor Angin</option>
+                      <option>Kecelakaan Lalu Lintas</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-semibold block mb-1">Lokasi KM Tol / Landmark</label>
+                    <input required placeholder="Tol Cipali KM 102+400" className="w-full p-2 bg-surface-container-low rounded border border-outline-variant/30" />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button type="button" onClick={() => setShowSOSModal(false)} className="px-3 py-1.5 bg-surface-container rounded font-semibold">Batal</button>
+                    <button type="submit" className="px-4 py-1.5 bg-error text-white rounded font-semibold">Kirim Respon Darurat</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- SCREEN 8: MASTER POOL & TRAYEK ---
+    function MasterPoolScreen() {
+      const pools = [
+        { name: "Pulogebang (Pusat)", loc: "Jakarta Timur", slots: "38 / 50 Slot", ready: 26, free: 12, pic: "Hendra Saputra", tel: "(021) 4870-9821" },
+        { name: "Surabaya Waru", loc: "Sidoarjo, Jatim", slots: "22 / 35 Slot", ready: 17, free: 13, pic: "Agus Santoso", tel: "(031) 853-4412" },
+        { name: "Solo Tirtonadi", loc: "Surakarta, Jateng", slots: "15 / 25 Slot", ready: 12, free: 10, pic: "Budi Santoso", tel: "(0271) 714-229" },
+        { name: "Poris Plawad", loc: "Tangerang, Banten", slots: "14 / 20 Slot", ready: 11, free: 6, pic: "Dedi Kurniawan", tel: "(021) 5578-1002" }
+      ];
+
+      return (
+        <div className="flex flex-col w-full space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold text-on-surface tracking-tight">Master Pool, Depo & Jaringan Trayek</h1>
+            <p className="text-xs text-on-surface-variant">Pusat kendali kapasitas stabling pool fisik, izin trayek Kemenhub, dan titik checkpoint rest area.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {pools.map((p) => (
+              <div key={p.name} className="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant/20 space-y-3">
+                <div className="flex justify-between items-start">
+                  <span className="px-2 py-0.5 rounded bg-blue-50 text-primary text-[10px] font-bold">Pool Stabling</span>
+                  <span className="text-[11px] text-emerald-700 font-bold">Siap Operasi</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-on-surface">{p.name}</h3>
+                  <span className="text-xs text-on-surface-variant">{p.loc}</span>
+                </div>
+                <div className="p-2.5 bg-surface-container-low rounded-lg text-xs">
+                  <div className="flex justify-between font-semibold">
+                    <span>Okupansi</span>
+                    <span className="text-primary font-mono">{p.slots}</span>
+                  </div>
+                  <div className="w-full bg-surface-container-high rounded-full h-1.5 mt-1.5">
+                    <div className="bg-primary h-1.5 rounded-full" style={{ width: "70%" }}></div>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-on-surface-variant mt-1">
+                    <span>{p.ready} Siap Jalan</span>
+                    <span className="text-emerald-700 font-semibold">{p.free} Slot Kosong</span>
+                  </div>
+                </div>
+                <div className="text-[11px] text-outline pt-1">
+                  PIC: {p.pic} • {p.tel}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // --- SCREEN 9: PRE-TRIP INSPECTION ---
+    function InspeksiPreTripScreen() {
+      const [approved, setApproved] = useState(false);
+
+      return (
+        <div className="flex flex-col w-full space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs uppercase font-bold text-primary mb-1">
+                <span>Modul 3.1 • Inspeksi Pra-Keberangkatan</span>
+                <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full font-semibold">Standard Kemenhub RI</span>
+              </div>
+              <h1 className="text-2xl font-bold text-on-surface tracking-tight">Pre-Trip Digital Safety Inspection</h1>
+              <p className="text-xs text-on-surface-variant">Checklist mandatori keselamatan bus AKAP sebelum penerbitan Surat Perintah Jalan (SPJ).</p>
+            </div>
+            <button onClick={() => { setApproved(true); alert("SPJ #SPJ-20241024-TY015 berhasil dirilis resmi!"); }} className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-lg shadow-sm hover:bg-primary-hover flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[18px]">verified</span>
+              Rilis Unit Lolos Inspeksi (SPJ)
+            </button>
+          </div>
+
+          {/* Unit Header Card */}
+          <div className="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/20 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1.5 rounded-lg bg-primary text-white font-mono font-bold text-sm">TY-015</span>
+              <div>
+                <h3 className="font-bold text-base text-on-surface">B 7123 VGA (Adiputro Jetbus 5 MHD)</h3>
+                <span className="text-xs text-on-surface-variant">Trayek: Jakarta (Pulogebang) — Madiun • 17:30 WIB</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-xs font-medium">
+              <div>
+                <span className="text-outline block text-[10px]">Driver 1</span>
+                <span className="font-bold text-on-surface">Joko Santoso</span>
+              </div>
+              <div>
+                <span className="text-outline block text-[10px]">Barometer Angin</span>
+                <span className="font-bold text-emerald-700">9.2 Bar (Optimal)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Check categories */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/20 space-y-3">
+              <h4 className="font-bold text-sm text-on-surface flex items-center gap-2">
+                <span className="w-6 h-6 rounded bg-red-100 text-error flex items-center justify-center text-xs">A</span>
+                Pneumatic & Pengereman (Kritis)
+              </h4>
+              <label className="flex items-start gap-2 p-2 rounded bg-surface-container-low cursor-pointer">
+                <input type="checkbox" defaultChecked className="rounded text-primary focus:ring-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold block">Uji Kebocoran Katup Brake Chamber</span>
+                  <span className="text-on-surface-variant text-[11px]">Tekanan drop &lt; 0.2 Bar selama 45 detik</span>
+                </div>
+              </label>
+              <label className="flex items-start gap-2 p-2 rounded bg-surface-container-low cursor-pointer">
+                <input type="checkbox" defaultChecked className="rounded text-primary focus:ring-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold block">Retarder & Exhaust Brake 3-Step</span>
+                  <span className="text-on-surface-variant text-[11px]">Respon deselerasi engine brake aktif</span>
+                </div>
+              </label>
+            </div>
+
+            <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/20 space-y-3">
+              <h4 className="font-bold text-sm text-on-surface flex items-center gap-2">
+                <span className="w-6 h-6 rounded bg-blue-100 text-primary flex items-center justify-center text-xs">B</span>
+                Fasilitas Darurat Kemenhub
+              </h4>
+              <label className="flex items-start gap-2 p-2 rounded bg-surface-container-low cursor-pointer">
+                <input type="checkbox" defaultChecked className="rounded text-primary focus:ring-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold block">2x APAR 3kg Dry Powder (Tekanan Hijau)</span>
+                  <span className="text-on-surface-variant text-[11px]">1 dekat driver, 1 dekat toilet tengah</span>
+                </div>
+              </label>
+              <label className="flex items-start gap-2 p-2 rounded bg-surface-container-low cursor-pointer">
+                <input type="checkbox" defaultChecked className="rounded text-primary focus:ring-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold block">4 Palu Pemecah Kaca & Pintu Emergency</span>
+                  <span className="text-on-surface-variant text-[11px]">Tuas pembuka darurat tidak terhalang</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- SCREEN 10: ANALITIK BIAYA PER KM & TCO ---
+    function AnalitikBiayaScreen() {
+      return (
+        <div className="flex flex-col w-full space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs uppercase font-bold text-on-surface-variant mb-1">
+                <span>Tata Kelola & Finansial</span>
+                <span>•</span>
+                <span className="text-primary">Analitik Biaya & Siklus Hidup</span>
+              </div>
+              <h1 className="text-2xl font-bold text-on-surface tracking-tight">Analitik Biaya per KM & TCO (Total Cost of Ownership)</h1>
+              <p className="text-xs text-on-surface-variant">Evaluasi efisiensi biaya riil per kilometer tempuh armada dan kelayakan peremajaan (Re-Body vs Unit Baru).</p>
+            </div>
+            <button onClick={() => alert("Simulasi perhitungan peremajaan re-body dibuka.")} className="px-4 py-2 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-hover shadow-sm">
+              + Simulasi Hitung Re-Body
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+              <span className="text-xs text-on-surface-variant uppercase font-bold">Avg Fleet Cost / KM</span>
+              <div className="text-2xl font-bold text-on-surface mt-1">Rp 6.420 <span className="text-xs font-normal text-on-surface-variant">/ KM</span></div>
+              <span className="text-[11px] text-error font-semibold">+1.8% dari target SLA</span>
+            </div>
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+              <span className="text-xs text-on-surface-variant uppercase font-bold">Akumulasi OPEX YTD</span>
+              <div className="text-2xl font-bold text-on-surface mt-1">Rp 24,85 M</div>
+              <span className="text-[11px] text-primary font-semibold">Total Tempuh 3.87M KM</span>
+            </div>
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+              <span className="text-xs text-on-surface-variant uppercase font-bold">Porsi BBM Solar</span>
+              <div className="text-2xl font-bold text-on-surface mt-1">Rp 3.120 <span className="text-xs font-normal text-on-surface-variant">/ KM</span></div>
+              <span className="text-[11px] text-emerald-700 font-semibold">48.6% Total Biaya</span>
+            </div>
+            <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border border-outline-variant/20">
+              <span className="text-xs text-on-surface-variant uppercase font-bold">Unit Perlu Evaluasi</span>
+              <div className="text-2xl font-bold text-error mt-1">7 Unit</div>
+              <span className="text-[11px] text-error font-semibold">Cost &gt; Rp 8.100/KM</span>
+            </div>
+          </div>
+
+          {/* Re-body vs Beli Baru Box */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant/20 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs uppercase font-bold text-outline tracking-wider">Opsi 1: Pembelian Unit Baru</span>
+                <span className="material-symbols-outlined text-outline">shopping_bag</span>
+              </div>
+              <div className="text-3xl font-bold text-on-surface">Rp 2,40 Miliar</div>
+              <div className="text-xs text-on-surface-variant space-y-1.5 pt-2 border-t">
+                <div className="flex justify-between"><span>Depresiasi / Thn</span><span className="font-bold text-on-surface">Rp 400 Jt</span></div>
+                <div className="flex justify-between"><span>Estimasi Cost/KM</span><span className="font-bold text-emerald-700">Rp 5.650</span></div>
+                <div className="flex justify-between"><span>Masa Pakai</span><span className="font-bold text-on-surface">8 - 10 Tahun</span></div>
+              </div>
+            </div>
+
+            <div className="bg-blue-50/60 p-5 rounded-xl shadow-sm border-2 border-primary/30 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs uppercase font-bold text-primary tracking-wider">Opsi 2: Re-Body Karoseri Baru</span>
+                <span className="px-2 py-0.5 rounded bg-primary text-white text-[10px] font-bold">Rekomendasi</span>
+              </div>
+              <div className="text-3xl font-bold text-primary">Rp 750 Juta</div>
+              <div className="text-xs text-on-surface-variant space-y-1.5 pt-2 border-t border-blue-200">
+                <div className="flex justify-between"><span>Depresiasi / Thn</span><span className="font-bold text-emerald-700">Rp 150 Jt (-62.5%)</span></div>
+                <div className="flex justify-between"><span>Perpanjangan Usia</span><span className="font-bold text-primary">+ 5 Tahun Operasi</span></div>
+                <div className="flex justify-between"><span>Hemat Capex</span><span className="font-bold text-emerald-700">Rp 1,65 Miliar/Unit</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- SCREEN: PERAWATAN SPK & WORK ORDER (SUPPORTING VIEW) ---
+    function PerawatanSPKScreen() {
+      return (
+        <div className="flex flex-col w-full space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-on-surface tracking-tight">Work Order SPK & Preventive Maintenance</h1>
+              <p className="text-xs text-on-surface-variant">Manajemen antrean perbaikan mekanik bay workshop pool dan jadwal servis berkala.</p>
+            </div>
+            <button onClick={() => alert("SPK Perbaikan baru diterbitkan.")} className="px-4 py-2 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-hover shadow-sm">
+              + Buat SPK Baru
+            </button>
+          </div>
+
+          <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 p-5">
+            <h3 className="text-sm font-bold text-on-surface mb-3">Antrean SPK Dalam Workshop</h3>
+            <div className="space-y-3">
+              <div className="p-3 bg-surface-container-low rounded-lg border border-outline-variant/10 flex justify-between items-center text-xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-primary">SPK-2024-1108</span>
+                    <span className="font-bold text-on-surface">TY-082 (Hino RM 280)</span>
+                  </div>
+                  <p className="text-on-surface-variant mt-0.5">Bocoran Valve Air Brake & Sensor ABS Error</p>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-error-container text-error font-bold text-[10px]">Menunggu Part (WAPV)</span>
+              </div>
+              <div className="p-3 bg-surface-container-low rounded-lg border border-outline-variant/10 flex justify-between items-center text-xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-primary">SPK-2024-1104</span>
+                    <span className="font-bold text-on-surface">TY-043 (MB OH 1626 L)</span>
+                  </div>
+                  <p className="text-on-surface-variant mt-0.5">Penggantian Kampas Kopling & Retarder Flush (80K KM)</p>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-blue-50 text-primary font-bold text-[10px]">Pengerjaan 70%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MAIN APP WRAPPER WITH MEMORY ROUTER ---
+    function App() {
+      const [isDark, setIsDark] = useState(false);
+
+      const toggleTheme = () => {
+        setIsDark(!isDark);
+        if (!isDark) {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      };
+
+      return (
+        <MemoryRouter initialEntries={["/"]}>
+          <div className="min-h-screen bg-background flex flex-col">
+            <Sidebar />
+            <div className="pl-72 flex-1 flex flex-col">
+              <Header onToggleTheme={toggleTheme} />
+              <main className="relative pt-20 px-space-lg pb-space-xl flex-1 max-w-7xl w-full">
+                <Routes>
+                  <Route path="/" element={<DashboardScreen />} />
+                  <Route path="/dashboard-overview" element={<DashboardScreen />} />
+                  <Route path="/master-armada" element={<MasterArmadaScreen />} />
+                  <Route path="/armada-sasis" element={<MasterArmadaScreen />} />
+                  <Route path="/pelacakan-ban-komponen" element={<TrackingBanScreen />} />
+                  <Route path="/master-pool-trayek" element={<MasterPoolScreen />} />
+                  <Route path="/inspeksi-pre-trip" element={<InspeksiPreTripScreen />} />
+                  <Route path="/dispatch-serah-terima" element={<DispatchSerahTerimaScreen />} />
+                  <Route path="/operasional-bus" element={<DispatchSerahTerimaScreen />} />
+                  <Route path="/log-insiden" element={<IncidentScreen />} />
+                  <Route path="/perawatan-spk" element={<PerawatanSPKScreen />} />
+                  <Route path="/bengkel-spk" element={<PerawatanSPKScreen />} />
+                  <Route path="/gudang-suku-cadang" element={<GudangScreen />} />
+                  <Route path="/suku-cadang-ban" element={<GudangScreen />} />
+                  <Route path="/legalitas-regulasi" element={<LegalitasScreen />} />
+                  <Route path="/legalitas" element={<LegalitasScreen />} />
+                  <Route path="/analitik-biaya-km" element={<AnalitikBiayaScreen />} />
+                </Routes>
+              </main>
+            </div>
+          </div>
+        </MemoryRouter>
+      );
+    }
+
+    const container = document.getElementById("root");
+    const root = createRoot(container);
+    root.render(<App />);
+  </script>
+</body>
+</html>
