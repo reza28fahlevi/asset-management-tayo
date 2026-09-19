@@ -143,6 +143,40 @@ export interface LegalItem {
   stnk: string;
   status: 'Road Legal' | 'Restricted' | 'Grounded';
   statusClass: string;
+  chassis?: string;
+  body?: string;
+  kirNumber?: string;
+  kirDate?: string;
+  kirLocation?: string;
+  brakeEfficiency?: string;
+  emissionResult?: string;
+  kpsNumber?: string;
+  kpsDate?: string;
+  skTrayek?: string;
+  corridorCode?: string;
+  stnkNumber?: string;
+  stnkDate?: string;
+  fiveYearDate?: string;
+  samsatLocation?: string;
+  taxAmount?: number;
+  insuranceNumber?: string;
+  insuranceDate?: string;
+  picName?: string;
+  notes?: string;
+}
+
+export interface LegalScheduleItem {
+  id: string;
+  busId: string;
+  plate: string;
+  docType: 'Uji KIR Dishub (BLUE)' | 'Perpanjangan KPS SPIONAM' | 'Pajak STNK Tahunan' | 'Cek Fisik 5 Tahunan';
+  scheduledDate: string;
+  scheduledTime: string;
+  location: string;
+  assignedDriver: string;
+  costEstimate: number;
+  status: 'Terjadwal' | 'Proses Uji' | 'Selesai Lulus' | 'Batal';
+  notes?: string;
 }
 
 export interface PoolItem {
@@ -272,4 +306,79 @@ export interface TrayekData {
   fareRange: string;
   skKemenhub: string;
   status: 'Aktif Resmi' | 'Musiman' | 'Tahap Evaluasi';
+}
+
+export interface FleetCostRecord {
+  id: string;
+  busId: string;
+  plate: string;
+  route: string;
+  period: string;
+  distanceKm: number;
+  fuelCost: number;
+  fuelLiters: number;
+  partsCost: number;
+  serviceCost: number;
+  tireCost: number;
+  tollCost: number;
+  crewCost: number;
+  totalCost: number;
+  costPerKm: number;
+  fuelConsumptionRatio: string;
+  efficiencyStatus: 'Efisien' | 'Normal' | 'Boros (Perlu Evaluasi)';
+  efficiencyBadge: string;
+  notes?: string;
+}
+
+export interface RebodySimulationItem {
+  id: string;
+  busId: string;
+  plate: string;
+  chassis: string;
+  chassisYear: number;
+  currentOdometer: number;
+  targetKaroseri: string;
+  rebodyCost: number;
+  engineRefreshCost: number;
+  totalRebodyCapex: number;
+  newBusCost: number;
+  capexSaving: number;
+  extendedLifeYears: number;
+  estCostPerKm: number;
+  recommendation: 'Sangat Direkomendasikan Re-Body' | 'Layak Re-Body' | 'Disarankan Beli Baru';
+  roiMonths: number;
+  analyst: string;
+  simulationDate: string;
+  notes?: string;
+}
+
+export interface HandoverRecordItem {
+  id: string;
+  bastkNumber: string;
+  busId: string;
+  plate: string;
+  chassis?: string;
+  type: 'Check-In (Tiba di Pool)' | 'Check-Out (Keberangkatan SPJ)' | 'Mutasi Antar-Pool';
+  date: string;
+  time: string;
+  originPool: string;
+  destinationPool: string;
+  driverName: string;
+  coDriverName?: string;
+  dispatcherName: string;
+  canbusOdometer: number;
+  physicalOdometer: number;
+  odometerDiff: number;
+  fuelLevelPercent: number;
+  fuelLiters: number;
+  adBlueLevel?: string;
+  cabinCleanliness: 'Sangat Bersih' | 'Standar' | 'Kotor (Perlu Cuci)';
+  toiletStatus: 'Bersih & Air Penuh' | 'Perlu Kuras & Isi Air' | 'Tidak Ada Toilet';
+  safetyItemsComplete: boolean;
+  documentsComplete: boolean;
+  passengerAmenitiesCount: string;
+  handoverStatus: 'Ready / Siap Jalan' | 'Masuk Cuci & Sanitasi' | 'Rujuk Workshop (SPK)' | 'Perjalanan Antar-Pool';
+  statusBadge: string;
+  driverComplaint?: string;
+  notes?: string;
 }

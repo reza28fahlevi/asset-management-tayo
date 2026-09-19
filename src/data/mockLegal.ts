@@ -1,4 +1,4 @@
-import { LegalItem } from '../types';
+import { LegalItem, LegalScheduleItem } from '../types';
 
 export const mockLegalData: LegalItem[] = [
   {
@@ -9,7 +9,27 @@ export const mockLegalData: LegalItem[] = [
     kps: "08 Sep 2026",
     stnk: "14 Nov 2024",
     status: "Grounded",
-    statusClass: "bg-error text-white"
+    statusClass: "bg-error text-white",
+    chassis: "Mercedes-Benz OH 1626 L Air Suspension",
+    body: "Adiputro Jetbus 5 MHD",
+    kirNumber: "BLUE-SBY-2024-09881",
+    kirDate: "2024-10-24",
+    kirLocation: "UPUBKB Dishub Surabaya Wiyung",
+    brakeEfficiency: "48% (Bawah Ambang Batas 50%)",
+    emissionResult: "Opasitas 42% (Maks 50%)",
+    kpsNumber: "KPS-AKAP-2024-00441",
+    kpsDate: "2026-09-08",
+    skTrayek: "SK.503/AJ.001/DJPD/2024",
+    corridorCode: "KOR-01-SBY",
+    stnkNumber: "STNK-POL-8821901",
+    stnkDate: "2024-11-14",
+    fiveYearDate: "2028-11-14",
+    samsatLocation: "Samsat Surabaya Barat",
+    taxAmount: 7850000,
+    insuranceNumber: "JR-IWKBU-2024-4412",
+    insuranceDate: "2025-06-30",
+    picName: "Arif Kurniawan (Legal Officer)",
+    notes: "KIR kedaluwarsa, rem belakang kiri tidak lulus uji efisiensi. Unit di-grounded dan kunci SPJ ditahan di pool."
   },
   {
     id: "TY-021",
@@ -19,7 +39,27 @@ export const mockLegalData: LegalItem[] = [
     kps: "19 Nov 2026",
     stnk: "05 Feb 2025",
     status: "Restricted",
-    statusClass: "bg-amber-100 text-amber-900"
+    statusClass: "bg-amber-100 text-amber-900 border border-amber-200",
+    chassis: "Hino RM280 Space Frame",
+    body: "Laksana Legacy SR3 Suites Class",
+    kirNumber: "BLUE-JKT-2024-10214",
+    kirDate: "2024-10-28",
+    kirLocation: "UPUBKB Dishub Ujung Menteng Cakung",
+    brakeEfficiency: "64% (Lulus Uji)",
+    emissionResult: "Opasitas 28%",
+    kpsNumber: "KPS-AKAP-2024-00219",
+    kpsDate: "2026-11-19",
+    skTrayek: "SK.503/AJ.001/DJPD/2024",
+    corridorCode: "KOR-04-MDN",
+    stnkNumber: "STNK-POL-7741021",
+    stnkDate: "2025-02-05",
+    fiveYearDate: "2029-02-05",
+    samsatLocation: "Samsat Jakarta Timur",
+    taxAmount: 6420000,
+    insuranceNumber: "JR-IWKBU-2024-2190",
+    insuranceDate: "2025-08-31",
+    picName: "Arif Kurniawan (Legal Officer)",
+    notes: "Jatuh tempo KIR H-3, telah dijadwalkan uji berkala di Dishub Cakung."
   },
   {
     id: "TY-064",
@@ -29,7 +69,27 @@ export const mockLegalData: LegalItem[] = [
     kps: "30 Okt 2024 (H-5)",
     stnk: "18 Agu 2025",
     status: "Restricted",
-    statusClass: "bg-amber-100 text-amber-900"
+    statusClass: "bg-amber-100 text-amber-900 border border-amber-200",
+    chassis: "Scania K410IB 6x2*4 Opticruise",
+    body: "Adiputro Jetbus 5 SHD Double Glass",
+    kirNumber: "BLUE-JKT-2024-11094",
+    kirDate: "2025-01-12",
+    kirLocation: "UPUBKB Dishub Pulogadung",
+    brakeEfficiency: "72% (Lulus Optimal)",
+    emissionResult: "Opasitas 18%",
+    kpsNumber: "KPS-AKAP-2023-00642",
+    kpsDate: "2024-10-30",
+    skTrayek: "SK.503/AJ.001/DJPD/2023",
+    corridorCode: "KOR-02-MLG",
+    stnkNumber: "STNK-POL-7190064",
+    stnkDate: "2025-08-18",
+    fiveYearDate: "2028-08-18",
+    samsatLocation: "Samsat Jakarta Selatan",
+    taxAmount: 9250000,
+    insuranceNumber: "JR-IWKBU-2024-6401",
+    insuranceDate: "2025-07-31",
+    picName: "Bambang Triatmojo (Staf Perizinan)",
+    notes: "Kartu Pengawasan (KPS) SPIONAM jatuh tempo H-5. Berkas permohonan perpanjangan online sudah diajukan ke Ditjen Hubdat."
   },
   {
     id: "TY-015",
@@ -39,7 +99,27 @@ export const mockLegalData: LegalItem[] = [
     kps: "14 Agu 2027",
     stnk: "12 Des 2024",
     status: "Road Legal",
-    statusClass: "bg-emerald-100 text-emerald-800"
+    statusClass: "bg-emerald-100 text-emerald-800 border border-emerald-200",
+    chassis: "Volvo B11R 430HP 6x2",
+    body: "Tentrem Avante D2 Double Decker",
+    kirNumber: "BLUE-JKT-2024-08151",
+    kirDate: "2025-03-18",
+    kirLocation: "UPUBKB Dishub Pulogadung",
+    brakeEfficiency: "76% (Lulus Sangat Baik)",
+    emissionResult: "Opasitas 15%",
+    kpsNumber: "KPS-AKAP-2024-00155",
+    kpsDate: "2027-08-14",
+    skTrayek: "SK.503/AJ.001/DJPD/2024",
+    corridorCode: "KOR-03-YOG",
+    stnkNumber: "STNK-POL-7102015",
+    stnkDate: "2024-12-12",
+    fiveYearDate: "2029-12-12",
+    samsatLocation: "Samsat Jakarta Timur",
+    taxAmount: 11200000,
+    insuranceNumber: "JR-IWKBU-2024-1502",
+    insuranceDate: "2025-12-31",
+    picName: "Arif Kurniawan (Legal Officer)",
+    notes: "Semua perizinan aktif dan laik jalan. Siap tugas jalur utama Trans Jawa."
   },
   {
     id: "TY-088",
@@ -49,7 +129,69 @@ export const mockLegalData: LegalItem[] = [
     kps: "02 Feb 2028",
     stnk: "19 Apr 2025",
     status: "Road Legal",
-    statusClass: "bg-emerald-100 text-emerald-800"
+    statusClass: "bg-emerald-100 text-emerald-800 border border-emerald-200",
+    chassis: "Mercedes-Benz OH 1626 L Air Suspension",
+    body: "Adiputro Jetbus 5 MHD",
+    kirNumber: "BLUE-BDG-2024-05882",
+    kirDate: "2025-05-20",
+    kirLocation: "UPUBKB Dishub Kota Bandung Gedebage",
+    brakeEfficiency: "68% (Lulus Baik)",
+    emissionResult: "Opasitas 24%",
+    kpsNumber: "KPS-AKAP-2024-00889",
+    kpsDate: "2028-02-02",
+    skTrayek: "SK.503/AJ.001/DJPD/2024",
+    corridorCode: "KOR-05-WSB",
+    stnkNumber: "STNK-POL-7922088",
+    stnkDate: "2025-04-19",
+    fiveYearDate: "2028-04-19",
+    samsatLocation: "Samsat Pajajaran Bandung",
+    taxAmount: 7650000,
+    insuranceNumber: "JR-IWKBU-2024-8809",
+    insuranceDate: "2025-10-31",
+    picName: "Bambang Triatmojo (Staf Perizinan)",
+    notes: "Dokumen lengkap dan valid. Terhubung online ke database SPIONAM Kemenhub."
+  }
+];
+
+export const mockLegalSchedules: LegalScheduleItem[] = [
+  {
+    id: "SCH-001",
+    busId: "TY-021",
+    plate: "B 7741 TGA",
+    docType: "Uji KIR Dishub (BLUE)",
+    scheduledDate: "2024-10-27",
+    scheduledTime: "08:30 WIB",
+    location: "UPUBKB Dishub Ujung Menteng Cakung",
+    assignedDriver: "Suparno (Driver Standby Bengkel)",
+    costEstimate: 250000,
+    status: "Terjadwal",
+    notes: "Slot antrean online nomor antrian #14. Armada sudah lolos checklist pra-uji rem & lampu."
+  },
+  {
+    id: "SCH-002",
+    busId: "TY-044",
+    plate: "L 7801 UA",
+    docType: "Uji KIR Dishub (BLUE)",
+    scheduledDate: "2024-10-26",
+    scheduledTime: "10:00 WIB",
+    location: "UPUBKB Dishub Surabaya Wiyung",
+    assignedDriver: "Didik Prasetyo",
+    costEstimate: 300000,
+    status: "Terjadwal",
+    notes: "Uji ulang kelaikan setelah penggantian kanvas rem tromol dan balance brake tester di SPK-2026-001."
+  },
+  {
+    id: "SCH-003",
+    busId: "TY-064",
+    plate: "B 7190 KGA",
+    docType: "Perpanjangan KPS SPIONAM",
+    scheduledDate: "2024-10-28",
+    scheduledTime: "13:00 WIB",
+    location: "Pelayanan Terpadu Satu Pintu (PTSP) Kemenhub Jakarta",
+    assignedDriver: "Bambang Triatmojo (Staf Legal)",
+    costEstimate: 150000,
+    status: "Proses Uji",
+    notes: "Verifikasi dokumen manifest trayek dan berita acara kelaikan armada oleh Dishub."
   }
 ];
 
